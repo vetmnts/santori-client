@@ -1,0 +1,1 @@
+token = dxGetStatus().VideoCardName
